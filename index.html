@@ -3,178 +3,498 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Framingham 心血管風險評估</title>
+<title>Framingham 10年心血管疾病風險評估</title>
 
 <style>
 body{
-    font-family:Arial,sans-serif;
-    max-width:700px;
-    margin:auto;
-    padding:20px;
+    font-family: Arial, sans-serif;
+    max-width: 800px;
+    margin: 20px auto;
+    padding: 20px;
+    line-height: 1.6;
 }
-input,select{
+
+h1{
+    color:#1565c0;
+}
+
+label{
+    display:block;
+    margin-top:12px;
+    font-weight:bold;
+}
+
+input, select{
     width:100%;
-    padding:8px;
+    padding:10px;
+    box-sizing:border-box;
     margin-top:5px;
-    margin-bottom:10px;
 }
+
 button{
-    background:#1976d2;
+    margin-top:20px;
+    padding:12px 24px;
+    background:#1565c0;
     color:white;
     border:none;
-    padding:10px 20px;
-    border-radius:5px;
-    cursor:pointer;
-}
-.result{
-    margin-top:20px;
-    padding:15px;
-    background:#f5f5f5;
     border-radius:8px;
+    cursor:pointer;
+    font-size:16px;
 }
-.low{color:green;}
-.medium{color:orange;}
-.high{color:red;}
+
+button:hover{
+    background:#0d47a1;
+}
+
+.result{
+    margin-top:25px;
+    padding:20px;
+    border-radius:10px;
+    background:#f5f5f5;
+}
+
+.low{
+    color:green;
+    font-size:20px;
+}
+
+.medium{
+    color:orange;
+    font-size:20px;
+}
+
+.high{
+    color:red;
+    font-size:20px;
+}
+
+.warning{
+    color:red;
+    margin-top:10px;
+}
 </style>
 
 </head>
+
 <body>
 
-<h2>Framingham 十年心血管疾病風險評估</h2>
+<h1>Framingham 10年心血管疾病風險評估</h1>
 
-<label>年齡</label>
-<input type="number" id="age">
+<label>年齡 (30-74歲)</label>
+<input type="number" id="age" min="30" max="74">
 
 <label>性別</label>
 <select id="sex">
-<option>男</option>
-<option>女</option>
+    <option value="男">男</option>
+    <option value="女">女</option>
 </select>
 
-<label>總膽固醇 (mmol/L)</label>
-<input type="number" step="0.1" id="tc">
+<label>總膽固醇 Total Cholesterol (mmol/L)</label>
+<input type="number" id="tc" step="0.1">
 
-<label>HDL-C (mmol/L)</label>
-<input type="number" step="0.1" id="hdl">
+<label>高密度膽固醇 HDL (mmol/L)</label>
+<input type="number" id="hdl" step="0.1">
+
+<label>低密度膽固醇 LDL (mmol/L)</label>
+<input type="number" id="ldl" step="0.1">
 
 <label>收縮壓 SBP (mmHg)</label>
 <input type="number" id="sbp">
 
-<label>接受降壓治療？</label>
+<label>現正接受降壓治療？</label>
 <select id="treated">
-<option>否</option>
-<option>是</option>
+    <option value="否">否</option>
+    <option value="是">是</option>
 </select>
 
 <label>吸煙？</label>
 <select id="smoker">
-<option>否</option>
-<option>是</option>
+    <option value="否">否</option>
+    <option value="是">是</option>
 </select>
 
 <label>糖尿病？</label>
 <select id="diabetes">
-<option>否</option>
-<option>是</option>
+    <option value="否">否</option>
+    <option value="是">是</option>
 </select>
 
-<br><br>
+<button onclick="calculateRisk()">計算風險</button>
 
-<button onclick="calculate()">
-計算風險
-</button>
-
-<div id="result" class="result"></div>
+<div id="result" class="result" style="display:none;"></div>
 
 <script>
 
-function calculate(){
+function calculateRisk(){
 
-let age=Number(document.getElementById("age").value);
-let sex=document.getElementById("sex").value;
-let tc=Number(document.getElementById("tc").value);
-let hdl=Number(document.getElementById("hdl").value);
-let sbp=Number(document.getElementById("sbp").value);
+    const age = Number(document.getElementById("age").value);
+    const sex = document.getElementById("sex").value;
 
-let treated=
-document.getElementById("treated").value==="是";
+    const tc_mmol = Number(document.getElementById("tc").value);
+    const hdl_mmol = Number(document.getElementById("hdl").value);
+    const ldl = Number(document.getElementById("ldl").value);
 
-let smoker=
-document.getElementById("smoker").value==="是";
+    const sbp = Number(document.getElementById("sbp").value);
 
-let diabetes=
-document.getElementById("diabetes").value==="是";
+    const treated =
+        document.getElementById("treated").value === "是";
 
-let risk;
+    const smoker =
+        document.getElementById("smoker").value === "是";
 
-if(sex==="男"){
+    const diabetes =
+        document.getElementById("diabetes").value === "是";
 
-let score=
-(3.06117*Math.log(age))
-+(1.12370*Math.log(tc))
--(0.93263*Math.log(hdl))
-+((treated?1.99881:1.93303)*Math.log(sbp))
-+(smoker?0.65451:0)
-+(diabetes?0.57367:0)
--20.6443;
+   if(
+    !age ||
+    !tc_mmol ||
+    !hdl_mmol ||
+    !ldl ||
+    !sbp
+){
+    alert("請填寫所有資料");
+    return;
+}
 
-risk=
-100*(1-Math.pow(
-0.88936,
-Math.exp(score)
-));
+    if(age < 30 || age > 74){
+        alert("Framingham General CVD Risk只適用於30至74歲人士");
+        return;
+    }
+
+    const tc = tc_mmol * 38.67;
+    const hdl = hdl_mmol * 38.67;
+
+    let risk;
+
+    if(sex === "男"){
+
+        const score =
+            (3.06117 * Math.log(age))
+            + (1.12370 * Math.log(tc))
+            - (0.93263 * Math.log(hdl))
+            + ((treated ? 1.99881 : 1.93303) * Math.log(sbp))
+            + (smoker ? 0.65451 : 0)
+            + (diabetes ? 0.57367 : 0)
+            - 23.9802;
+
+        risk =
+            1 -
+            Math.pow(
+                0.88936,
+                Math.exp(score)
+            );
+
+    } else {
+
+        const score =
+            (2.32888 * Math.log(age))
+            + (1.20904 * Math.log(tc))
+            - (0.70833 * Math.log(hdl))
+            + ((treated ? 2.82263 : 2.76157) * Math.log(sbp))
+            + (smoker ? 0.52873 : 0)
+            + (diabetes ? 0.69154 : 0)
+            - 26.1931;
+
+        risk =
+            1 -
+            Math.pow(
+                0.95012,
+                Math.exp(score)
+            );
+
+    }
+
+    risk = risk * 100;
+
+    risk = Math.max(0, risk);
+    risk = Math.min(100, risk);
+
+let level;
+let colour;
+
+if(risk < 10){
+    level = "🟢 低風險";
+    colour = "low";
+}
+else if(risk < 20){
+    level = "🟡 中風險";
+    colour = "medium";
+}
+else{
+    level = "🔴 高風險";
+    colour = "high";
+}
+
+let strengths = [];
+let concerns = [];
+
+if(sex === "男"){
+
+    if(hdl_mmol < 1.0){
+
+        concerns.push(
+            "高密度膽固醇HDL偏低 (<1.0 mmol/L)"
+        );
+
+    }
+    else if(hdl_mmol >= 1.6){
+
+        strengths.push(
+            "高密度膽固醇HDL處於保護性水平"
+        );
+
+    }
+    else{
+
+        strengths.push(
+            "高密度膽固醇HDL處於正常範圍"
+        );
+
+    }
 
 }else{
 
-let score=
-(2.32888*Math.log(age))
-+(1.20904*Math.log(tc))
--(0.70833*Math.log(hdl))
-+((treated?2.82263:2.76157)*Math.log(sbp))
-+(smoker?0.52873:0)
-+(diabetes?0.69154:0)
--21.5769;
+    if(hdl_mmol < 1.3){
 
-risk=
-100*(1-Math.pow(
-0.95012,
-Math.exp(score)
-));
+        concerns.push(
+            "高密度膽固醇HDL偏低 (<1.3 mmol/L)"
+        );
+
+    }
+    else if(hdl_mmol >= 1.6){
+
+        strengths.push(
+            "高密度膽固醇HDL處於保護性水平"
+        );
+
+    }
+    else{
+
+        strengths.push(
+            "高密度膽固醇HDL處於正常範圍"
+        );
+
+    }
 
 }
+if(tc_mmol < 5.2){
 
-risk=Math.max(0,Math.min(100,risk));
+    strengths.push(
+      "總膽固醇處於理想範圍 (<5.2 mmol/L)"
+    );
 
-let level="";
-let color="";
-
-if(risk<10){
-level="低風險";
-color="low";
 }
-else if(risk<20){
-level="中風險";
-color="medium";
+else if(tc_mmol < 6.2){
+
+    concerns.push(
+      "總膽固醇稍高 (5.2-6.1 mmol/L)"
+    );
+
 }
 else{
-level="高風險";
-color="high";
+
+    concerns.push(
+      "總膽固醇偏高 (≥6.2 mmol/L)"
+    );
+
+}
+if(ldl < 2.6){
+
+    strengths.push(
+      "低密度膽固醇LDL達理想水平 (<2.6 mmol/L)"
+    );
+
+}
+else if(ldl < 3.4){
+
+    concerns.push(
+      "低密度膽固醇LDL略高 (2.6-3.3 mmol/L)"
+    );
+
+}
+else{
+
+    concerns.push(
+      "低密度膽固醇LDL偏高 (≥3.4 mmol/L)"
+    );
+
+}
+if(sbp < 120){
+
+    strengths.push("收縮壓處於理想水平");
+
+}
+else if(sbp < 140){
+
+    concerns.push(
+        "收縮壓高於理想水平 (120-139 mmHg)"
+    );
+
+}
+else{
+
+    concerns.push(
+        "收縮壓偏高 (≥140 mmHg)"
+    );
+
+}
+if(!smoker){
+    strengths.push("沒有吸煙習慣");
+}
+else{
+    concerns.push("吸煙會增加心臟病及中風風險");
 }
 
-document.getElementById("result").innerHTML=
+if(!diabetes){
+    strengths.push("沒有糖尿病病史");
+}
+else{
+    concerns.push("糖尿病是重要心血管危險因素");
+}
+
+let dietAdvice = [];
+
+dietAdvice.push("每日最少2份水果及3份蔬菜");
+dietAdvice.push("選擇全穀類及高纖維食物");
+dietAdvice.push("以魚類、豆類及去皮家禽作主要蛋白質來源");
+
+if(tc_mmol >= 5.2){
+
+    dietAdvice.push(
+      "總膽固醇高於理想範圍，建議減少飽和脂肪及反式脂肪攝取"
+    );
+
+    dietAdvice.push(
+      "減少肥肉、全脂奶製品及加工肉類"
+    );
+
+    dietAdvice.push(
+      "增加豆類、魚類及高纖維食物攝取"
+    );
+
+}
+let exerciseAdvice = [];
+
+exerciseAdvice.push("每星期最少150分鐘中等強度有氧運動");
+exerciseAdvice.push("每星期至少2次阻力訓練");
+exerciseAdvice.push("避免長時間久坐，每小時起身活動數分鐘");
+
+let smokingAdvice = [];
+
+if(smoker){
+
+    smokingAdvice.push("建議全面戒煙");
+    smokingAdvice.push("戒煙後一年內冠心病風險開始明顯下降");
+    smokingAdvice.push("可考慮戒煙門診或尼古丁替代療法");
+
+}
+else{
+
+    smokingAdvice.push("繼續保持不吸煙");
+    smokingAdvice.push("避免長期接觸二手煙");
+
+}
+
+let bpAdvice = [];
+
+if(sbp >= 130){
+
+    bpAdvice.push("定期監察血壓");
+    bpAdvice.push("減少鹽分攝取");
+    bpAdvice.push("保持理想體重");
+
+}
+
+let dmAdvice = [];
+
+if(diabetes){
+
+    dmAdvice.push("定期監察HbA1c");
+    dmAdvice.push("控制碳水化合物攝取");
+    dmAdvice.push("按醫護人員建議覆診");
+
+}
+
+document.getElementById("result").style.display="block";
+
+document.getElementById("result").innerHTML =
+
 `
-<h3>結果</h3>
+<h2>評估結果</h2>
 
-<p><strong>10年心血管疾病風險:</strong>
-${risk.toFixed(1)}%</p>
+<p>
+<strong>10年心血管疾病風險：</strong>
+${risk.toFixed(1)}%
+</p>
 
-<p class="${color}">
+<p class="${colour}">
 <strong>${level}</strong>
 </p>
-`;
 
+<hr>
+
+<h3>✅ 保護因素</h3>
+
+<ul>
+${strengths.map(x=>`<li>${x}</li>`).join("")}
+</ul>
+
+<h3>⚠️ 可改善因素</h3>
+
+<ul>
+${concerns.length
+? concerns.map(x=>`<li>${x}</li>`).join("")
+: "<li>暫未發現明顯風險因素</li>"}
+</ul>
+
+<hr>
+
+<h3>🥗 飲食建議</h3>
+
+<ul>
+${dietAdvice.map(x=>`<li>${x}</li>`).join("")}
+</ul>
+
+<h3>🏃 運動建議</h3>
+
+<ul>
+${exerciseAdvice.map(x=>`<li>${x}</li>`).join("")}
+</ul>
+
+<h3>🚭 戒煙建議</h3>
+
+<ul>
+${smokingAdvice.map(x=>`<li>${x}</li>`).join("")}
+</ul>
+
+${bpAdvice.length ?
+`
+<h3>🩺 血壓管理</h3>
+<ul>
+${bpAdvice.map(x=>`<li>${x}</li>`).join("")}
+</ul>
+`
+: ""
 }
 
+${dmAdvice.length ?
+`
+<h3>🍬 糖尿病管理</h3>
+<ul>
+${dmAdvice.map(x=>`<li>${x}</li>`).join("")}
+</ul>
+`
+: ""
+}
+
+<hr>
+
+<small>
+本工具僅供健康教育用途，不能代替醫生診斷及治療建議。
+</small>
+
+    `;
+}
 </script>
 
 </body>
